@@ -10,12 +10,12 @@ A lightweight, cross-platform TCP port scanner implemented in Python. Use it to 
 
 ## Requirements
 - Python 3.7+
-- Standard library modules (socket, argparse, threading/asyncio) — or list any third-party dependencies used in `script.py`
+- Standard library modules (socket, argparse, threading/asyncio)
 
 ## Installation
 1. Clone the repo:
     ```
-    git clone <repo-url>
+    git clone https://github.com/hamzeh01/port-scanner.git
     cd port-scanner
     ```
 2. (Optional) Create a virtual environment:
@@ -29,9 +29,10 @@ A lightweight, cross-platform TCP port scanner implemented in Python. Use it to 
     ```
 
 ## Usage
-Basic usage (replace with actual CLI provided by `script.py`):
+
+Basic syntax
 ```
-python script.py --host 192.168.1.1 --ports 1-1024 --timeout 1 --output results.csv
+python script.py -H <host> -p <ports> [options]
 ```
 
 Common options to document (adjust to match `script.py`):
@@ -67,14 +68,5 @@ host,port,status,service,latency_ms
 - Document code behavior and CLI changes in this README.
 
 ## License
-Specify repository license (e.g., MIT). Add LICENSE file.
 
----
-
-To generate a README that exactly matches `script.py`, paste the full content of `script.py` or provide:
-- The CLI options and defaults
-- Any third-party dependencies
-- Example command lines and sample output
-- Any implementation details you want documented
-- Preferred license
-- Any additional sections you want included
+This project is licensed under the MIT License.
