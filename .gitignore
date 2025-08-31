@@ -1,0 +1,30 @@
+# Virtual environments
+.venv/
+
+# Package / build artifacts
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+.eggs/
+
+# Editor/IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Socket scanner artifacts (scan outputs, captures)
+captures/
+pcaps/
+scans/
+results/
+output/
+*.pcap
+*.pcapng
