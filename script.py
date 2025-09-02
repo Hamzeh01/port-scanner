@@ -1,25 +1,26 @@
+"""
+Simple TCP port scanner with worker threads.
+Resolve a hostname or IP and scan a list/range of TCP ports concurrently using
+a ThreadPoolExecutor. Prints live progress, reports open ports with service
+names when available, and emits a concise summary with elapsed time.
+Usage example:
+    python script.py example.com
+    python script.py 192.168.1.10 --ports 22,80,443,8000-8100 --workers 200 --timeout 0.5
+Exit codes:
+    0   Success
+    2   Invalid ports specification or no valid ports to scan
+    3   DNS/name resolution failure
+    130 Interrupted by user (KeyboardInterrupt)
+"""
 from __future__ import annotations
 import argparse
 import socket
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from typing import Iterable, List, Set
 
 #!/usr/bin/env python3
-"""
-Simple, clean TCP port scanner with worker threads.
-
-Usage:
-    python script.py target [--ports 1-1024] [--workers 100] [--timeout 1.0]
-
-Examples:
-    python script.py example.com
-    python script.py 192.168.1.10 --ports 22,80,443,8000-8100 --workers 200 --timeout 0.5
-"""
-
-
-
 
 def parse_ports(ports_arg: str) -> List[int]:
     """
@@ -94,6 +95,10 @@ def print_summary(target: str, ip: str, open_ports: List[int], elapsed: float) -
 
 
 def main(argv: Iterable[str]) -> int:
+    """Main CLI entry for the port scanner.
+    Parses argv, scans ports concurrently, prints progress and a summary.
+    Returns POSIX-style exit codes: 0 OK, 2 bad ports, 3 resolve error, 130 interrupted.
+    """
     parser = argparse.ArgumentParser(description="TCP port scanner with worker threads")
     parser.add_argument("target", help="Hostname or IP address to scan")
     parser.add_argument(
@@ -120,7 +125,7 @@ def main(argv: Iterable[str]) -> int:
 
     try:
         ports = parse_ports(args.ports)
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         print(f"Invalid ports specification: {e}", file=sys.stderr)
         return 2
 
@@ -134,30 +139,25 @@ def main(argv: Iterable[str]) -> int:
         print(f"Failed to resolve target '{args.target}': {e}", file=sys.stderr)
         return 3
 
-    total = len(ports)
-    print(f"Scanning {args.target} ({ip}) {total} ports with {args.workers} workers, timeout={args.timeout}s")
+    print(f"Scanning {args.target} ({ip})")
+    print(f"Ports: {len(ports)}  Workers: {args.workers}  Timeout: {args.timeout}s")
     start = time.time()
-
     open_ports: List[int] = []
-    scanned = 0
 
     try:
         with ThreadPoolExecutor(max_workers=args.workers) as executor:
-            future_to_port = {executor.submit(scan_port, ip, port, args.timeout): port for port in ports}
-            for future in as_completed(future_to_port):
-                port = future_to_port[future]
-                scanned += 1
-                try:
-                    is_open = future.result()
-                except Exception:
-                    is_open = False
+            # executor.map returns results in the order of the `ports` iterable,
+            # so we can zip ports with results to know which port corresponds to each result.
+            for idx, (port, is_open) in enumerate(
+                zip(
+                    ports, executor.map(lambda p: scan_port(ip, p, args.timeout), ports)
+                ),
+                start=1,
+            ):
                 if is_open:
                     open_ports.append(port)
-                    # Print immediate feedback for discovered open ports
-                    service = service_name_for_port(port)
-                    print(f"[OPEN] {port:5d}   {service}")
-                # Print progress on the same line (overwrites previous)
-                print(f"Scanned: {scanned}/{total} ports", end="\r", flush=True)
+                    print(f"[OPEN] {port:5d}   {service_name_for_port(port)}")
+                print(f"Scanned: {idx}/{len(ports)} ports", end="\r", flush=True)
 
     except KeyboardInterrupt:
         print("\nScan interrupted by user.", file=sys.stderr)
